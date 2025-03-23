@@ -29,47 +29,46 @@
         #info {
             margin-top: 30px;
             padding: 15px;
-            background-color: #f1f1f1;
-            border-radius: 5px;
-            text-align: left;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
             display: inline-block;
+            text-align: left;
             max-width: 600px;
         }
-
-        /* Custom Dialog Styles */
-        .custom-dialog {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 20px;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
-            border-radius: 5px;
-            z-index: 1000;
-            text-align: center;
-            min-width: 200px;
-        }
-        .custom-dialog button {
-            margin-top: 10px;
-            padding: 8px 15px;
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        .custom-dialog button:hover {
-            background: #0056b3;
-        }
-        .dialog-overlay {
+        /* Custom Dialog Styling */
+        #dialogOverlay {
+            display: none;
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             background: rgba(0, 0, 0, 0.5);
-            z-index: 999;
+            z-index: 1000;
+        }
+        #customDialog {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3);
+            z-index: 1001;
+            text-align: center;
+        }
+        #dialogMessage {
+            margin-bottom: 20px;
+        }
+        #closeDialog {
+            background: #007bff;
+            color: white;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -81,7 +80,7 @@
     
     <select id="hashType">
         <option value="MD4">MD4</option>
-        <option value="MD5" selected>MD5</option>  
+        <option value="MD5" selected>MD5</option>  <!-- MD5 is now the default -->
         <option value="SHA1">SHA-1</option>
         <option value="SHA256">SHA-256</option>
         <option value="SHA512">SHA-512</option>
@@ -98,54 +97,44 @@
 
     <div id="decodedMessage"></div>
 
-    <!-- Information Section -->
     <div id="info">
         <h3>What is this for?</h3>
-        <p>This tool allows you to generate hash codes from messages and decode hashes if they exist in our database.</p>
-        <p>It is useful for data integrity verification, password storage (without decryption), and security research.</p>
+        <p>This tool is designed to encode text into various hash formats (MD4, MD5, SHA-1, SHA-256, SHA-512) 
+        and check if a hash already exists in a database. If the hash is new, it gets saved for future reference. 
+        It also allows decoding by searching for stored hash values and retrieving the original message if available. 
+        This is useful for verifying data integrity, password hashing, and preventing duplicate entries in a database.</p>
         
-        <h3>How This Works:</h3>
-        <p><strong>Encoding:</strong> Enter a message and select a hash type. The hashed output will be generated and checked against a database.</p>
-        <p><strong>Decoding:</strong> Enter a hash to check if its original message is stored in the database.</p>
-        <p>If a hash is not found in the public database, it is automatically saved to our Firebase database for future reference.</p>
-        
-        <h3>Supported Hash Types:</h3>
-        <p>MD4, MD5, SHA-1, SHA-256, SHA-512.</p>
+        <h3>How It Works</h3>
+        <ol>
+            <li><strong>Encoding:</strong> When you enter a message and select a hash type, the system generates a hash.</li>
+            <li><strong>Checking Database:</strong> Before saving, the system checks a JSON database to see if the hash already exists.</li>
+            <li><strong>Saving:</strong> If the hash is new, it gets stored in the Firebase Realtime Database along with the original message.</li>
+            <li><strong>Decoding:</strong> When you enter a hash to decode, the system first checks the JSON database. If the hash is found, the original message is displayed. If not, it checks Firebase.</li>
+            <li><strong>Popup Messages:</strong> If there are errors or missing inputs, a popup alert will notify you.</li>
+        </ol>
     </div>
 
     <!-- Custom Dialog -->
+    <div id="dialogOverlay"></div>
+    <div id="customDialog">
+        <p id="dialogMessage"></p>
+        <button id="closeDialog" onclick="closeDialog()">OK</button>
+    </div>
+
     <script>
+        const FIREBASE_URL = "https://hash-code-20ecd-default-rtdb.firebaseio.com/";
+        const SECRET_KEY = "BZ8Rk25w81by4W8E8GeylP7EEpBtHU8VksuN3wpr"; // Your Secret Key
+        const JSON_DATABASE_URL = "https://raw.githubusercontent.com/MainScripts352/Database/refs/heads/main/Hash%20Code%20Database";
+
         function showDialog(message) {
-            // Create overlay
-            let overlay = document.createElement("div");
-            overlay.className = "dialog-overlay";
-            overlay.onclick = closeDialog;
-
-            // Create dialog box
-            let dialog = document.createElement("div");
-            dialog.className = "custom-dialog";
-
-            // Message content
-            let messageText = document.createElement("p");
-            messageText.innerText = message;
-
-            // Close button
-            let closeButton = document.createElement("button");
-            closeButton.innerText = "OK";
-            closeButton.onclick = closeDialog;
-
-            // Append elements
-            dialog.appendChild(messageText);
-            dialog.appendChild(closeButton);
-            document.body.appendChild(overlay);
-            document.body.appendChild(dialog);
+            document.getElementById("dialogMessage").innerText = message;
+            document.getElementById("dialogOverlay").style.display = "block";
+            document.getElementById("customDialog").style.display = "block";
         }
 
         function closeDialog() {
-            let overlay = document.querySelector(".dialog-overlay");
-            let dialog = document.querySelector(".custom-dialog");
-            if (overlay) overlay.remove();
-            if (dialog) dialog.remove();
+            document.getElementById("dialogOverlay").style.display = "none";
+            document.getElementById("customDialog").style.display = "none";
         }
 
         function encodeMessage() {
@@ -158,7 +147,6 @@
                 return;
             }
 
-            // Generate the hash
             switch (hashType) {
                 case "MD4":
                     hashedMessage = md4(message);
@@ -179,8 +167,30 @@
                     hashedMessage = "Invalid Hash Type";
             }
 
-            // Display the hashed message
             document.getElementById("output").innerHTML = `<p><strong>Hashed Output:</strong></p><p>${hashedMessage}</p>`;
+
+            fetch(JSON_DATABASE_URL)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.hasOwnProperty(hashedMessage)) {
+                        console.log("Hash found in JSON database. Not saving to Firebase.");
+                    } else {
+                        console.log("Hash not found. Saving to Firebase.");
+                        saveToFirebase(hashedMessage, message, hashType);
+                    }
+                })
+                .catch(error => {
+                    console.error("Error fetching JSON database:", error);
+                    saveToFirebase(hashedMessage, message, hashType);
+                });
+        }
+
+        function saveToFirebase(hashedMessage, message, hashType) {
+            fetch(`${FIREBASE_URL}${hashedMessage}.json?auth=${SECRET_KEY}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message, type: hashType })
+            }).catch(error => console.error("Error saving data:", error));
         }
 
         function decodeMessage() {
@@ -190,10 +200,14 @@
                 showDialog("Please enter a hash to decode.");
                 return;
             }
-
-            document.getElementById("decodedMessage").innerHTML = `
-                <p><strong>Original Message:</strong></p>
-                <p>Message not found.</p>`;
+            
+            fetch(`${FIREBASE_URL}${hashInput}.json?auth=${SECRET_KEY}`)
+                .then(response => response.json())
+                .then(firebaseData => {
+                    document.getElementById("decodedMessage").innerHTML = firebaseData?.message 
+                        ? `<p><strong>Original Message:</strong></p><p>${firebaseData.message}</p>`
+                        : "<p><strong>Message not found.</strong></p>";
+                }).catch(error => console.error("Error checking Firebase:", error));
         }
     </script>
 </body>
