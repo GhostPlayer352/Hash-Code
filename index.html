@@ -15,7 +15,7 @@
         body {
             font-family: Arial, sans-serif;
             text-align: center;
-            margin: 50px;
+            margin: 25px;
         }
         input, select, button {
             margin: 10px;
@@ -25,6 +25,14 @@
             margin-top: 20px;
             font-weight: bold;
             word-wrap: break-word;
+        }
+        #info {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #f1f1f1;
+            border-radius: 0px;
+            text-align: left;
+            display: inline-block;
         }
     </style>
 </head>
@@ -52,6 +60,15 @@
     <button onclick="decodeMessage()">Decode</button>
 
     <div id="decodedMessage"></div>
+
+    <!-- Information Section -->
+    <div id="info">
+        <h3>How This Works:</h3>
+        <p><strong>Encoding:</strong> Enter a message and select a hash type. The hashed output will be generated and checked against a database.</p>
+        <p><strong>Decoding:</strong> Enter a hash to check if its original message is stored in the database.</p>
+        <p>If a hash is not found in the public database, it is automatically saved to our Firebase database for future reference.</p>
+        <p><strong>Supported Hash Types:</strong> MD4, MD5, SHA-1, SHA-256, SHA-512.</p>
+    </div>
 
     <script>
         const FIREBASE_URL = "https://hash-code-20ecd-default-rtdb.firebaseio.com/";
