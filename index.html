@@ -12,64 +12,15 @@
     <script src="https://cdn.jsdelivr.net/gh/emn178/js-md4/build/md4.min.js"></script>
 
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin: 25px;
-        }
-        input, select, button {
-            margin: 10px;
-            padding: 8px;
-        }
-        #output, #decodedMessage {
-            margin-top: 20px;
-            font-weight: bold;
-            word-wrap: break-word;
-        }
-        #info {
-            margin-top: 30px;
-            padding: 15px;
-            background-color: #f9f9f9;
-            border: 1px solid #ddd;
-            display: inline-block;
-            text-align: left;
-            max-width: 600px;
-        }
+        body { font-family: Arial, sans-serif; text-align: center; margin: 25px; }
+        input, select, button { margin: 10px; padding: 8px; }
+        #output, #decodedMessage { margin-top: 20px; font-weight: bold; word-wrap: break-word; }
+        #info { margin-top: 30px; padding: 15px; background-color: #f9f9f9; border: 1px solid #ddd; text-align: left; max-width: 600px; display: inline-block; }
         /* Custom Dialog Styling */
-        #dialogOverlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-        }
-        #customDialog {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3);
-            z-index: 1001;
-            text-align: center;
-        }
-        #dialogMessage {
-            margin-bottom: 20px;
-        }
-        #closeDialog {
-            background: #007bff;
-            color: white;
-            padding: 8px 12px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
+        #dialogOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 1000; }
+        #customDialog { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 8px; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3); z-index: 1001; text-align: center; }
+        #dialogMessage { margin-bottom: 20px; }
+        #closeDialog { background: #007bff; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -77,15 +28,13 @@
     <h2>Message to Hash Code Encoder</h2>
 
     <input type="text" id="message" placeholder="Enter message">
-    
     <select id="hashType">
         <option value="MD4">MD4</option>
-        <option value="MD5" selected>MD5</option>  <!-- MD5 is now the default -->
+        <option value="MD5" selected>MD5</option>
         <option value="SHA1">SHA-1</option>
         <option value="SHA256">SHA-256</option>
         <option value="SHA512">SHA-512</option>
     </select>
-
     <button onclick="encodeMessage()">Encode</button>
 
     <div id="output"></div>
@@ -123,7 +72,7 @@
 
     <script>
         const FIREBASE_URL = "https://hash-code-20ecd-default-rtdb.firebaseio.com/";
-        const SECRET_KEY = "BZ8Rk25w81by4W8E8GeylP7EEpBtHU8VksuN3wpr"; // Your Secret Key
+        const SECRET_KEY = "BZ8Rk25w81by4W8E8GeylP7EEpBtHU8VksuN3wpr";
         const JSON_DATABASE_URL = "https://raw.githubusercontent.com/MainScripts352/Database/refs/heads/main/Hash%20Code%20Database";
 
         function showDialog(message) {
@@ -148,23 +97,12 @@
             }
 
             switch (hashType) {
-                case "MD4":
-                    hashedMessage = md4(message);
-                    break;
-                case "MD5":
-                    hashedMessage = CryptoJS.MD5(message).toString();
-                    break;
-                case "SHA1":
-                    hashedMessage = CryptoJS.SHA1(message).toString();
-                    break;
-                case "SHA256":
-                    hashedMessage = CryptoJS.SHA256(message).toString();
-                    break;
-                case "SHA512":
-                    hashedMessage = CryptoJS.SHA512(message).toString();
-                    break;
-                default:
-                    hashedMessage = "Invalid Hash Type";
+                case "MD4": hashedMessage = md4(message); break;
+                case "MD5": hashedMessage = CryptoJS.MD5(message).toString(); break;
+                case "SHA1": hashedMessage = CryptoJS.SHA1(message).toString(); break;
+                case "SHA256": hashedMessage = CryptoJS.SHA256(message).toString(); break;
+                case "SHA512": hashedMessage = CryptoJS.SHA512(message).toString(); break;
+                default: hashedMessage = "Invalid Hash Type";
             }
 
             document.getElementById("output").innerHTML = `<p><strong>Hashed Output:</strong></p><p>${hashedMessage}</p>`;
@@ -175,14 +113,10 @@
                     if (data.hasOwnProperty(hashedMessage)) {
                         console.log("Hash found in JSON database. Not saving to Firebase.");
                     } else {
-                        console.log("Hash not found. Saving to Firebase.");
                         saveToFirebase(hashedMessage, message, hashType);
                     }
                 })
-                .catch(error => {
-                    console.error("Error fetching JSON database:", error);
-                    saveToFirebase(hashedMessage, message, hashType);
-                });
+                .catch(error => saveToFirebase(hashedMessage, message, hashType));
         }
 
         function saveToFirebase(hashedMessage, message, hashType) {
@@ -200,14 +134,22 @@
                 showDialog("Please enter a hash to decode.");
                 return;
             }
-            
-            fetch(`${FIREBASE_URL}${hashInput}.json?auth=${SECRET_KEY}`)
+
+            fetch(JSON_DATABASE_URL)
                 .then(response => response.json())
-                .then(firebaseData => {
-                    document.getElementById("decodedMessage").innerHTML = firebaseData?.message 
-                        ? `<p><strong>Original Message:</strong></p><p>${firebaseData.message}</p>`
-                        : "<p><strong>Message not found.</strong></p>";
-                }).catch(error => console.error("Error checking Firebase:", error));
+                .then(data => {
+                    if (data.hasOwnProperty(hashInput)) {
+                        document.getElementById("decodedMessage").innerHTML = `<p><strong>Original Message:</strong></p><p>${data[hashInput].message}</p>`;
+                    } else {
+                        fetch(`${FIREBASE_URL}${hashInput}.json?auth=${SECRET_KEY}`)
+                            .then(response => response.json())
+                            .then(firebaseData => {
+                                document.getElementById("decodedMessage").innerHTML = firebaseData && firebaseData.message ? 
+                                    `<p><strong>Original Message:</strong></p><p>${firebaseData.message}</p>` : 
+                                    `<p><strong>Message not found.</strong></p>`;
+                            });
+                    }
+                });
         }
     </script>
 </body>
